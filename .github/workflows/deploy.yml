@@ -1,0 +1,78 @@
+name: Deploy to AKS
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "Which service to deploy"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - service-a
+          - service-b
+          - all
+      skip_infra:
+        description: "Skip infra manifests (namespace, RBAC, network policies, ingress)"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+      image_tag:
+        description: "Image tag to deploy (leave empty to use latest git SHA)"
+        required: false
+        default: ""
+
+jobs:
+  deploy:
+    name: Deploy to AKS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve services
+        id: resolve
+        run: |
+          INPUT="${{ github.event.inputs.service }}"
+          if [ "$INPUT" = "all" ]; then
+            echo "services=service-a,service-b" >> $GITHUB_OUTPUT
+          else
+            echo "services=$INPUT" >> $GITHUB_OUTPUT
+          fi
+
+          TAG="${{ github.event.inputs.image_tag }}"
+          if [ -z "$TAG" ]; then
+            echo "tag=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+          else
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set up kubeconfig
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: ${{ secrets.AKS_RESOURCE_GROUP }}
+          cluster-name: ${{ secrets.AKS_CLUSTER_NAME }}
+
+      - name: Deploy
+        run: |
+          chmod +x ./scripts/deploy.sh
+
+          SKIP_INFRA_FLAG=""
+          if [ "${{ github.event.inputs.skip_infra }}" = "true" ]; then
+            SKIP_INFRA_FLAG="--skip-infra"
+          fi
+
+          ./scripts/deploy.sh \
+            --tag "${{ steps.resolve.outputs.tag }}" \
+            --services "${{ steps.resolve.outputs.services }}" \
+            --infra-dir "./infra" \
+            $SKIP_INFRA_FLAG
