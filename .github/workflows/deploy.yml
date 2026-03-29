@@ -62,10 +62,10 @@ jobs:
           resource-group: ${{ secrets.AKS_RESOURCE_GROUP }}
           cluster-name: ${{ secrets.AKS_CLUSTER_NAME }}
 
-      - name: Verify cluster connectivity
+      - name: Install kubelogin & convert kubeconfig
         run: |
-          kubectl config current-context
-          kubectl cluster-info
+          az aks install-cli --only-show-errors
+          kubelogin convert-kubeconfig -l azurecli
 
       - name: Deploy
         run: |
