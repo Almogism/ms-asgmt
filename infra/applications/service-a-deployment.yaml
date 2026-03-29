@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-a
+  namespace: ms-asgmt-app
+  labels:
+    app: service-a
+    version: "1.0.0"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: service-a
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0          # zero-downtime rollouts
+  template:
+    metadata:
+      labels:
+        app: service-a
+        version: "1.0.0"
+    spec:
+      # ── Security hardening ────────────────────────────────────────────────
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+
+      containers:
+        - name: service-a
+          image: <ACR_NAME>.azurecr.io/service-a:latest   # replaced by CI/CD
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+
+          env:
+            - name: FETCH_INTERVAL_SEC
+              value: "60"
+            - name: AVERAGE_INTERVAL_SEC
+              value: "600"
+            - name: BTC_API_URL
+              value: "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
+
+          # ── Probes ──────────────────────────────────────────────────────
+          livenessProbe:
+            httpGet:
+              path: /healthz/live
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
+            timeoutSeconds: 5
+
+          readinessProbe:
+            httpGet:
+              path: /healthz/ready
+              port: http
+            initialDelaySeconds: 15   # wait for first BTC fetch
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 5
+
+          # ── Resources ───────────────────────────────────────────────────
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "300m"
+              memory: "256Mi"
+
+          # ── Container security ──────────────────────────────────────────
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp          # gunicorn needs a writable /tmp
+
+      volumes:
+        - name: tmp
+          emptyDir: {}
+
+      # Give pods enough time to finish in-flight requests on termination
+      terminationGracePeriodSeconds: 30

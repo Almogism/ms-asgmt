@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: service-a
+  namespace: ms-asgmt-app
+automountServiceAccountToken: false   # follow least-privilege principle
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: service-b
+  namespace: ms-asgmt-app
+automountServiceAccountToken: false

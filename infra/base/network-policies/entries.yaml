@@ -1,0 +1,118 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. DEFAULT DENY – block all ingress & egress within the namespace by default
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: ms-asgmt-app
+spec:
+  podSelector: {}       # applies to every pod in the namespace
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# 2. Allow the NGINX Ingress controller to reach Service A
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-service-a
+  namespace: ms-asgmt-app
+spec:
+  podSelector:
+    matchLabels:
+      app: service-a
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# 3. Allow the NGINX Ingress controller to reach Service B
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-service-b
+  namespace: ms-asgmt-app
+spec:
+  podSelector:
+    matchLabels:
+      app: service-b
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# 4. Allow Service A egress to the internet (CoinGecko API + DNS)
+#    Note: Service A intentionally has NO egress rule to service-b pods,
+#    which means Service A → Service B traffic is blocked by the default-deny.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-service-a-egress-internet
+  namespace: ms-asgmt-app
+spec:
+  podSelector:
+    matchLabels:
+      app: service-a
+  policyTypes:
+    - Egress
+  egress:
+    # DNS resolution (kube-dns)
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # HTTPS to the CoinGecko API (and any other external HTTPS)
+    - ports:
+        - protocol: TCP
+          port: 443
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# 5. Allow Service B egress to DNS only (it doesn't need internet access)
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-service-b-egress-dns
+  namespace: ms-asgmt-app
+spec:
+  podSelector:
+    matchLabels:
+      app: service-b
+  policyTypes:
+    - Egress
+  egress:
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

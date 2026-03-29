@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: service-a-pod-reader
+  namespace: btc-app
+subjects:
+  - kind: ServiceAccount
+    name: service-a
+    namespace: btc-app
+roleRef:
+  kind: Role
+  apiGroup: rbac.authorization.k8s.io
+  name: pod-reader
