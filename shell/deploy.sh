@@ -184,11 +184,12 @@ az acr login --name "$ACR_NAME" \
   || die "Failed to log in to ACR '$ACR_NAME'."
 success "ACR login successful."
 
-# ── Substitute ACR name in deployment manifests ───────────────────────────────
-info "Substituting ACR name in deployment manifests..."
+# ── Substitute ACR name and image tag in deployment manifests ─────────────────
+info "Substituting ACR name and image tag in deployment manifests..."
 for SERVICE in "${SERVICE_LIST[@]}"; do
   MANIFEST="${INFRA_DIR}/applications/${SERVICE}-deployment.yaml"
   sed -i "s|<ACR_NAME>|${ACR_NAME}|g" "$MANIFEST"
+  sed -i "s|<IMAGE_TAG>|${IMAGE_TAG}|g" "$MANIFEST"
   success "Patched: ${MANIFEST}"
 done
 
