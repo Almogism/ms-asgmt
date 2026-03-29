@@ -29,7 +29,7 @@ spec:
 
       containers:
         - name: service-b
-          image: <ACR_NAME>.azurecr.io/service-a:<IMAGE_TAG>
+          image: <ACR_NAME>.azurecr.io/service-b:<IMAGE_TAG>
           imagePullPolicy: Always
           ports:
             - name: http
