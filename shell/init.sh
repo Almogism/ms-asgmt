@@ -127,7 +127,7 @@ echo -e "${BLD}═════════════════════�
 echo ""
 
 # ── Step 1: Resource Group ────────────────────────────────────────────────────
-info "Step 1/5 — Creating resource group '${RESOURCE_GROUP}' in '${LOCATION}'..."
+info "Step 1/6 — Creating resource group '${RESOURCE_GROUP}' in '${LOCATION}'..."
 az group create \
   --name "$RESOURCE_GROUP" \
   --location "$LOCATION" \
@@ -137,7 +137,7 @@ success "Resource group created."
 echo ""
 
 # ── Step 2: Container Registry ───────────────────────────────────────────────
-info "Step 2/5 — Creating container registry '${REGISTRY}' (SKU: ${ACR_SKU})..."
+info "Step 2/6 — Creating container registry '${REGISTRY}' (SKU: ${ACR_SKU})..."
 az acr create \
   --name "$REGISTRY" \
   --resource-group "$RESOURCE_GROUP" \
@@ -148,7 +148,7 @@ success "Container registry created."
 echo ""
 
 # ── Step 3: AKS Cluster ───────────────────────────────────────────────────────
-info "Step 3/5 — Creating AKS cluster '${CLUSTER}' (this may take several minutes)..."
+info "Step 3/6 — Creating AKS cluster '${CLUSTER}' (this may take several minutes)..."
 
 AKS_ARGS=(
   --name "$CLUSTER"
@@ -175,7 +175,7 @@ success "AKS cluster created."
 echo ""
 
 # ── Step 4: kubeconfig ────────────────────────────────────────────────────────
-info "Step 4/5 — Fetching kubectl credentials for '${CLUSTER}'..."
+info "Step 4/6 — Fetching kubectl credentials for '${CLUSTER}'..."
 az aks get-credentials \
   --resource-group "$RESOURCE_GROUP" \
   --name "$CLUSTER" \
@@ -184,7 +184,7 @@ success "kubectl context set to '${CLUSTER}'."
 echo ""
 
 # ── Step 5: Bind ACR to AKS ───────────────────────────────────────────────────
-info "Step 5/5 — Binding ACR for '${CLUSTER}'..."
+info "Step 5/6 — Binding ACR for '${CLUSTER}'..."
 AKS_ID=$( az aks show \
           --name "${CLUSTER}" \
           --resource-group "${RESOURCE_GROUP}" \
@@ -199,6 +199,24 @@ az role assignment create \
   --assignee $AKS_ID \
   --role "AcrPull" \
   --scope $ACR_ID \
+  || die "Failed to create binding."
+success "Binding created"
+echo ""
+
+# ── Step 6: Create role binding for user ───────────────────────────────────────
+info "Step 6/6 — Create role binding from current user for '${CLUSTER}'..."
+USER_ID=$(  az ad signed-in-user \
+            show --query id -o tsv)
+
+AKS_ID=$( az aks show \
+          -n "${CLUSTER}" \
+          -g "${RESOURCE_GROUP}" \
+          --query id -o tsv)
+  
+az role assignment create \
+  --role "Azure Kubernetes Service RBAC Cluster Admin" \
+  --assignee $USER_ID \
+  --scope $AKS_ID
   || die "Failed to create binding."
 success "Binding created"
 echo ""
