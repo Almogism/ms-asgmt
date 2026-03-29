@@ -1,0 +1,39 @@
+Azure Subscription
+└── Resource Group  (ms-asgmt)
+    ├── AKS Cluster  (ms-asgmt-aks)
+    │   │
+    │   └── Kubernetes Cluster
+    │       │
+    │       ├── Namespace: ingress-nginx
+    │       │   └── NGINX Ingress Controller (pod)
+    │       │
+    │       └── Namespace: ms-asgmt-app
+    │           │
+    │           ├── Deployments
+    │           │   ├── service-a  ──► manages 2 ReplicaSets ──► manages 2 Pods
+    │           │   └── service-b  ──► manages 2 ReplicaSets ──► manages 2 Pods
+    │           │
+    │           ├── Services (ClusterIP)
+    │           │   ├── service-a
+    │           │   └── service-b
+    │           │
+    │           ├── Ingress
+    │           │   └── ms-asgmt-ingress  (/service-a → svc-a, /service-b → svc-b)
+    │           │
+    │           ├── NetworkPolicies
+    │           │   ├── default-deny-all
+    │           │   ├── allow-ingress-to-service-a
+    │           │   ├── allow-ingress-to-service-b
+    │           │   ├── allow-service-a-egress-internet
+    │           │   └── allow-service-b-egress-dns
+    │           │
+    │           │
+    │           └── RBAC
+    │               ├── ServiceAccount: service-a
+    │               ├── ServiceAccount: service-b
+    │               ├── Role: pod-reader
+    │               └── RoleBinding: service-a-pod-reader
+    │
+    └── Azure Container Registry  (msasgmtreg)
+        ├── Image: service-a:latest
+        └── Image: service-b:latest
