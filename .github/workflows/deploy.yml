@@ -56,16 +56,23 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Install kubelogin
+        run: |
+          curl -sL https://github.com/Azure/kubelogin/releases/download/v0.1.4/kubelogin-linux-amd64.zip -o kubelogin.zip
+          unzip -q kubelogin.zip
+          sudo mv bin/linux_amd64/kubelogin /usr/local/bin/kubelogin
+          kubelogin --version
+
       - name: Set up kubeconfig
         uses: azure/aks-set-context@v3
         with:
           resource-group: ${{ secrets.AKS_RESOURCE_GROUP }}
           cluster-name: ${{ secrets.AKS_CLUSTER_NAME }}
 
-      - name: Install kubelogin & convert kubeconfig
+      - name: Convert kubeconfig for AAD auth
         run: |
-          az aks install-cli --only-show-errors
           kubelogin convert-kubeconfig -l azurecli
+          kubectl cluster-info
 
       - name: Deploy
         run: |
