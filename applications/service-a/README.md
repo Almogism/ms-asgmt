@@ -1,4 +1,4 @@
-## Service A :Bitcoin Price Tracker & Rolling Average
+## Service A: Bitcoin Price Tracker & Rolling Average
 
 A lightweight Python service that monitors Bitcoin prices in real-time, calculates a rolling average over a 10-minute window, and exposes health and data endpoints.
 
