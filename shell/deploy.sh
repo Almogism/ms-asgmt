@@ -8,7 +8,7 @@ ACR_SERVER="${ACR_NAME}.azurecr.io"
 IMAGE_TAG="${IMAGE_TAG:-$(git rev-parse --short HEAD)}"
 K8S_NAMESPACE="ms-asgmt-app"
 
-sed -i "s|<ACR_NAME>|${ACR_NAME}|g" \
+sed -i "" "s|<ACR_NAME>|${ACR_NAME}|g" \
   ../infra/applications/service-a-deployment.yaml \
   ../infra/applications/service-b-deployment.yaml
 

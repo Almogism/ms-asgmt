@@ -1,3 +1,5 @@
+set -euo pipefail
+
 echo "Building and pushing Docker images…"
 
 # Get ACR name
@@ -11,6 +13,7 @@ IMAGE_TAG="${IMAGE_TAG:-$(git rev-parse --short HEAD)}"
 for SERVICE in service-a service-b; do
   echo "  Building $SERVICE…"
   docker build \
+    --platform linux/amd64 \
     --tag "${ACR_SERVER}/${SERVICE}:${IMAGE_TAG}" \
     --tag "${ACR_SERVER}/${SERVICE}:latest" \
     --file "../applications/${SERVICE}/Dockerfile" \

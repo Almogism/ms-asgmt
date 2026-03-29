@@ -127,7 +127,7 @@ echo -e "${BLD}═════════════════════�
 echo ""
 
 # ── Step 1: Resource Group ────────────────────────────────────────────────────
-info "Step 1/4 — Creating resource group '${RESOURCE_GROUP}' in '${LOCATION}'..."
+info "Step 1/5 — Creating resource group '${RESOURCE_GROUP}' in '${LOCATION}'..."
 az group create \
   --name "$RESOURCE_GROUP" \
   --location "$LOCATION" \
@@ -137,7 +137,7 @@ success "Resource group created."
 echo ""
 
 # ── Step 2: Container Registry ───────────────────────────────────────────────
-info "Step 2/4 — Creating container registry '${REGISTRY}' (SKU: ${ACR_SKU})..."
+info "Step 2/5 — Creating container registry '${REGISTRY}' (SKU: ${ACR_SKU})..."
 az acr create \
   --name "$REGISTRY" \
   --resource-group "$RESOURCE_GROUP" \
@@ -148,7 +148,7 @@ success "Container registry created."
 echo ""
 
 # ── Step 3: AKS Cluster ───────────────────────────────────────────────────────
-info "Step 3/4 — Creating AKS cluster '${CLUSTER}' (this may take several minutes)..."
+info "Step 3/5 — Creating AKS cluster '${CLUSTER}' (this may take several minutes)..."
 
 AKS_ARGS=(
   --name "$CLUSTER"
@@ -175,12 +175,32 @@ success "AKS cluster created."
 echo ""
 
 # ── Step 4: kubeconfig ────────────────────────────────────────────────────────
-info "Step 4/4 — Fetching kubectl credentials for '${CLUSTER}'..."
+info "Step 4/5 — Fetching kubectl credentials for '${CLUSTER}'..."
 az aks get-credentials \
   --resource-group "$RESOURCE_GROUP" \
   --name "$CLUSTER" \
   || die "Failed to retrieve credentials for '$CLUSTER'."
 success "kubectl context set to '${CLUSTER}'."
+echo ""
+
+# ── Step 5: Bind ACR to AKS ───────────────────────────────────────────────────
+info "Step 5/5 — Binding ACR for '${CLUSTER}'..."
+AKS_ID=$( az aks show \
+          --name "${CLUSTER}" \
+          --resource-group "${RESOURCE_GROUP}" \
+          --query identityProfile.kubeletidentity.objectId --output tsv)
+
+ACR_ID=$( az acr show \
+          --name "${REGISTRY}" \
+          --resource-group "${RESOURCE_GROUP}" \
+          --query id --output tsv)
+
+az role assignment create \
+  --assignee $AKS_ID \
+  --role "AcrPull" \
+  --scope $ACR_ID \
+  || die "Failed to create binding."
+success "Binding created"
 echo ""
 
 # ── Done ──────────────────────────────────────────────────────────────────────
