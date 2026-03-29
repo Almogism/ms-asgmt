@@ -30,7 +30,7 @@ spec:
 
       containers:
         - name: service-a
-          image: <ACR_NAME>.azurecr.io/service-a:latest   # replaced by CI/CD
+          image: <ACR_NAME>.azurecr.io/service-a:<IMAGE_TAG>   # replaced by CI/CD
           imagePullPolicy: Always
           ports:
             - name: http
