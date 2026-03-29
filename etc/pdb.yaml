@@ -1,0 +1,22 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: service-a-pdb
+  namespace: ms-asgmt-app
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: service-a
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: service-b-pdb
+  namespace: ms-asgmt-app
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: service-b
