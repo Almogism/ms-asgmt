@@ -15,7 +15,7 @@ on:
       skip_infra:
         description: "Skip infra manifests (namespace, RBAC, network policies, ingress)"
         required: true
-        default: "false"
+        default: "true"
         type: choice
         options:
           - "false"
@@ -64,14 +64,14 @@ jobs:
 
       - name: Deploy
         run: |
-          chmod +x ./scripts/deploy.sh
+          chmod +x ./shell/deploy.sh
 
           SKIP_INFRA_FLAG=""
           if [ "${{ github.event.inputs.skip_infra }}" = "true" ]; then
             SKIP_INFRA_FLAG="--skip-infra"
           fi
 
-          ./scripts/deploy.sh \
+          ./shell/deploy.sh \
             --tag "${{ steps.resolve.outputs.tag }}" \
             --services "${{ steps.resolve.outputs.services }}" \
             --infra-dir "./infra" \
