@@ -6,12 +6,11 @@ on:
       service:
         description: "Which service to deploy"
         required: true
-        default: "all"
+        default: "service-a"
         type: choice
         options:
           - service-a
           - service-b
-          - all
       skip_infra:
         description: "Skip infra manifests (namespace, RBAC, network policies, ingress)"
         required: true
@@ -37,12 +36,7 @@ jobs:
       - name: Resolve services
         id: resolve
         run: |
-          INPUT="${{ github.event.inputs.service }}"
-          if [ "$INPUT" = "all" ]; then
-            echo "services=service-a,service-b" >> $GITHUB_OUTPUT
-          else
-            echo "services=$INPUT" >> $GITHUB_OUTPUT
-          fi
+          echo "services=${{ github.event.inputs.service }}" >> $GITHUB_OUTPUT
 
           TAG="${{ github.event.inputs.image_tag }}"
           if [ -z "$TAG" ]; then
