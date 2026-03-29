@@ -1,2 +1,5 @@
 .local_ssh/
 temp/
+
+# OS
+.DS_Store
